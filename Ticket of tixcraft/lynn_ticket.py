@@ -14,11 +14,12 @@ chromedriver = "C:\selenium_driver_chrome\chromedriver.exe"
 driver = webdriver.Chrome(chromedriver)
 #driver.get('https://tixcraft.com/activity/game/19_GEM')#鄧紫琪網頁
 #driver.get("https://tixcraft.com/activity/game/19_YJS")#測試位置區域1
-driver.get("https://tixcraft.com/activity/game/19_BLACKPINK")#測試位置區域2
+driver.get("https://tixcraft.com/activity/detail/22_kpts")#測試位置區域2
 #driver.get("https://tixcraft.com/activity/game/19_LEO37SOSS")
 driver.set_window_position(0,0) #瀏覽器位置
 driver.maximize_window #瀏覽器大小
-next_btn = driver.find_element_by_css_selector('.btn-next')
+# next_btn = driver.find_element_by_css_selector('.btn-next')
+next_btn =driver.find_element("css selector", SELECTOR)
 next_btn.click()
 
 el=driver.find_element_by_link_text("會員登入")
