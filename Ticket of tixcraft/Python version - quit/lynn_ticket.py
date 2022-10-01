@@ -25,7 +25,7 @@ def load_tixcraft(driver):
 
     for cookie in ListCookie:
         cookie_dict={
-            'domain':'.tixcraft.com',
+            'domain':'.pchome.com.tw',
             'name':cookie.get('name'),
             'value':cookie.get('value'),
             'expires':'',
@@ -44,11 +44,11 @@ driver.set_window_position(0,0) #瀏覽器位置
 driver.maximize_window #瀏覽器大小
 
 
-# url = 'https://tixcraft.com'
-url = 'https://tixcraft.com/login/google'
+
+url = 'https://ecvip.pchome.com.tw/login/v3/login.htm?rurl=https://24h.pchome.com.tw/index/v1'
 driver.get(url)
-loginname=("lynn3693257@gmail.com")#欲登入之google帳號
-gmailpassword=("QWEasd0257")#欲登入之google帳號密碼
+loginname=("0934038548")#欲登入之帳號
+gmailpassword=("lynn36930728")#欲登入之密碼
 # =============================================================================
 # Selenium被Google阻擋範例
 # 如果你是用webdriver所開啟的瀏覽器
@@ -56,15 +56,22 @@ gmailpassword=("QWEasd0257")#欲登入之google帳號密碼
 # 會進行登入阻擋
 # 叫你去用正常瀏覽器登入
 # =============================================================================
-emailid = driver.find_element(By.NAME, "identifier")
+emailid = driver.find_element(By.XPATH,'//*[@id="loginAcc"]')
 emailid.send_keys(loginname)
-driver.find_element(By.XPATH,'//*[@id="identifierNext"]/content/span').click()
+emailpassword = driver.find_element(By.XPATH,'//*[@id="loginPwd"]')
+emailpassword.send_keys(gmailpassword)
+driver.find_element(By.XPATH,'//*[@id="btnLogin"]').click()
+
+driver.get('https://24h.pchome.com.tw/prod/DYAJCX-1900C885P?fq=/S/DYAJJV')
+driver.find_element(By.XPATH,'//*[@id="ButtonContainer"]/button').click()
 
 
-# =============================================================================
+
+
+# time.sleep(15)
 # get_cookies(url,driver)
 # time.sleep(15)
-# 
+
 # load_tixcraft(driver)
-# =============================================================================
+
 
