@@ -1,10 +1,13 @@
 require('dotenv').config(); //載入.env環境檔
-// 取出.env檔案填寫的FB資訊
+// 取出.env檔案填寫的資訊
 const user_StartStation = process.env.StartStation_Setting;
 const user_TargetStation = process.env.TargetStation_Setting;
 const user_Id = process.env.User_Info;
 const user_TrainNumber = process.env.Train_No;
 const user_Time = process.env.Timeing_Setting;
+const CAPTCHA_Key = process.env.CAPTCHA_API_KEY;
+const Train_sitekey = process.env.Sitekey;
+
 
 const webdriver = require('selenium-webdriver'), // 加入虛擬網頁套件
   By = webdriver.By, // 你想要透過什麼方式來抓取元件，通常使用xpath、css
@@ -14,7 +17,23 @@ const options = new chrome.Options();
 options.addArguments('--log-level=3'); // 這個option可以讓你跟網頁端的console.log說掰掰
 // 因為notifications會干擾到爬蟲，所以要先把它關閉
 options.setUserPreferences({ 'profile.default_content_setting_values.notifications': 1 });
+const axios = require("axios");
+const Captcha = require("2captcha");
+const Captcha_Solver = new Captcha.Solver(CAPTCHA_Key);
 
+const Solver = async () => {
+  console.log("Solving captcha...");
+  const { data } = await Captcha_Solver.recaptcha(
+    Train_sitekey,
+    "https://www.railway.gov.tw/tra-tip-web/tip/tip001/tip123/queryTrain"
+  );
+
+  try {
+    console.log(data);
+  } catch (e) {
+    console.log(e);
+  }
+};
 
 async function ReserveTrainTicket () {
   
@@ -46,12 +65,13 @@ async function ReserveTrainTicket () {
     //抓到訂選的班次CheckBox然後點擊
     const Train_Selection = await driver.wait(until.elementLocated(By.xpath('//*[@id="queryForm"]/div[1]/table/tbody/tr[2]/td[10]/label')));
     Train_Selection.click();
+
     //抓到我不是機器人位置然後點擊 - 目前有問題
-    const NotRobot = await driver.wait(until.elementLocated(By.xpath('//*[contains(@class,"recaptcha-checkbox-border")]')));
-    NotRobot.click();
+    await driver.wait(Solver());
+
     //抓到下一步按鈕然後點擊
     const NextButton = await driver.wait(until.elementLocated(By.xpath('//*[@id="queryForm"]/div[2]/button[2]')));
     NextButton.click();
 
 }
-ReserveTrainTicket(); // 查詢時刻表
+ReserveTrainTicket(); // 預訂車票
