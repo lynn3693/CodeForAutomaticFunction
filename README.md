@@ -1,0 +1,2 @@
+# CodeForAutomaticFunction
+Get Ticket automatically
