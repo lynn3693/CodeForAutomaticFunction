@@ -6,13 +6,14 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
-from selenium.webdriver.common.action_chains import ActionChains
 import time
 from twocaptcha import TwoCaptcha
+from twocaptcha.api import ApiException, NetworkException
+from twocaptcha.solver import ValidationException
+from selenium.common.exceptions import TimeoutException
 
 
-
-def Buy_tickets(url): #買票準備(Google登入)
+def Buy_tickets(url): # 買票準備(Google登入)
     driver.get(url)
     LoginArea = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, "/html/body/div[1]/div[1]/div[2]/div[1]/div/div[2]/div/ul/li[3]/a"))
@@ -26,7 +27,7 @@ def Buy_tickets(url): #買票準備(Google登入)
     time.sleep(0.5)
     return
 
-def Get_Ticket_Prepare(): #選擇時間場次
+def Get_Ticket_Prepare(): # 選擇時間場次
     GetTicket = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, '//*[@id="content"]/div/div/ul/li[1]/a'))
     )
@@ -38,7 +39,7 @@ def Get_Ticket_Prepare(): #選擇時間場次
     time.sleep(0.5)
     return
 
-def Select_Ticket_Area(): #選擇價格區
+def Select_Ticket_Area(): # 選擇價格區
     Ticket_Area = WebDriverWait(driver, 10).until(
         EC.element_to_be_clickable((By.XPATH, '//*[@id="group_0"]/li[1]')) #特區
         # //*[@id="group_0"]/li[2]
@@ -49,7 +50,7 @@ def Select_Ticket_Area(): #選擇價格區
     time.sleep(0.5)
     return
 
-def Select_Ticket_Quantity(): #選擇票數
+def Select_Ticket_Quantity(): # 選擇票數
     Ticket_Quantity = WebDriverWait(driver,10).until(
         EC.presence_of_element_located((By.XPATH, '//*[@id="TicketForm_ticketPrice_01"]')) 
     )
@@ -82,7 +83,7 @@ def Select_Ticket_Quantity(): #選擇票數
     time.sleep(0.5)
     return
 
-def get_captcha_screenshot(): #驗證碼截圖
+def get_captcha_screenshot(): # 驗證碼截圖
     # takes a screenshot and returns the filename captcha.png
 
     element =WebDriverWait(driver, 20).until(
@@ -94,7 +95,7 @@ def get_captcha_screenshot(): #驗證碼截圖
     # time.sleep(1)
     return fname
 
-def send_captcha(fname): #辨識驗證碼
+def send_captcha(fname): # 辨識驗證碼
     solver = TwoCaptcha(apiKey='91dec2ea4cee1487b6735e575021e1bd',pollingInterval=3)
     print('balance left USD', solver.balance())
     start = time.time()
@@ -104,10 +105,22 @@ def send_captcha(fname): #辨識驗證碼
         print('result',result)
         print('elapsed time：', str(round(end - start, 2)))
         return result
-    except Exception as e:
-        # should retry?
-        print('could not solve captcha')
-        pass
+    except ValidationException as e:
+        # invalid parameters passed
+        print(e)
+        return e
+    except NetworkException as e:
+        # network error occurred
+        print(e)
+        return e
+    except ApiException as e:
+        # api respond with error
+        print(e)
+        return e
+    except TimeoutException as e:
+        # captcha is not solved so far
+        print(e)
+        return e
 
 def Select_Ticket_Pament(): #選擇價格區
     Ticket_Pament = WebDriverWait(driver, 10).until(
