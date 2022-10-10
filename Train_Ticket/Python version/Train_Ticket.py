@@ -14,7 +14,7 @@ from twocaptcha.solver import ValidationException
 binary_path="C:\selenium_driver_chrome\chromedriver.exe"
 service=Service(binary_path)
 
-def Train_Ticket_Prepare(url,User_StartStation,User_TargetStation,User_Id,User_TrainNumber,Target_Date): # 買票準備(相關資訊填寫)
+def Train_Ticket_Prepare(driver,url,User_StartStation,User_TargetStation,User_Id,User_TrainNumber,Target_Date): # 買票準備(相關資訊填寫)
     driver.get(url)
     # 填入訂票資訊
     # 1.身份證號
@@ -55,13 +55,13 @@ def Train_Ticket_Prepare(url,User_StartStation,User_TargetStation,User_Id,User_T
 
     return
 
-def Train_Ticket_Confirm():
+def Train_Ticket_Confirm(driver):
     Train_Selection = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, '//*[@id="queryForm"]/div[1]/table/tbody/tr[2]/td[10]/label'))
     )
     Train_Selection.click()
 
-    Google_Captcha_Solve()
+    Google_Captcha_Solve(driver)
 
     NextButton = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, '//*[@id="queryForm"]/div[2]/button[2]'))
@@ -70,7 +70,7 @@ def Train_Ticket_Confirm():
     
     return
 
-def Google_Captcha_Solve():
+def Google_Captcha_Solve(driver):
 
     Google_Captcha= WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.ID, 'g-recaptcha-response'))
@@ -82,8 +82,6 @@ def Google_Captcha_Solve():
     Google_Captcha.send_keys(solved_captcha.get('code'))
     # hide the captch input
     driver.execute_script("arguments[0].setAttribute('style', 'display:none;');",Google_Captcha)
-    # send text
-    driver.find_element(By.ID, 'send-message').click()
 
     return
 
@@ -96,6 +94,7 @@ def Captcha_Solver():
             solver = TwoCaptcha(apiKey=CAPTCHA_Key)
             print('Solving captcha...')
             result = solver.recaptcha(sitekey=Train_sitekey, url=website_url)
+            print('result:', result)
             print('balance left USD', solver.balance())
             return result
         except ValidationException as e:
@@ -115,7 +114,7 @@ def Captcha_Solver():
             print(e)
             return e
 
-def Train_Ticket_Payment(): # 票種
+def Train_Ticket_Payment(driver): # 票種
     Train_Order = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, '//*[@id="order"]/div[3]/button'))
     )
