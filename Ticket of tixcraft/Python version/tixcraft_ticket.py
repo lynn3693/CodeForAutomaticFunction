@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from selenium import webdriver
-from chromedriver_py import service
 from selenium_stealth import stealth
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -12,8 +12,7 @@ from twocaptcha.api import ApiException, NetworkException
 from twocaptcha.solver import ValidationException
 from selenium.common.exceptions import TimeoutException
 
-
-def Buy_tickets(url): # 買票準備(Google登入)
+def Buy_tickets(driver,url): # 買票準備(Google登入)
     driver.get(url)
     LoginArea = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, "/html/body/div[1]/div[1]/div[2]/div[1]/div/div[2]/div/ul/li[3]/a"))
@@ -27,7 +26,7 @@ def Buy_tickets(url): # 買票準備(Google登入)
     time.sleep(0.5)
     return
 
-def Get_Ticket_Prepare(): # 選擇時間場次
+def Get_Ticket_Prepare(driver): # 選擇時間場次
     GetTicket = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, '//*[@id="content"]/div/div/ul/li[1]/a'))
     )
@@ -39,7 +38,7 @@ def Get_Ticket_Prepare(): # 選擇時間場次
     time.sleep(0.5)
     return
 
-def Select_Ticket_Area(): # 選擇價格區
+def Select_Ticket_Area(driver): # 選擇價格區
     Ticket_Area = WebDriverWait(driver, 10).until(
         EC.element_to_be_clickable((By.XPATH, '//*[@id="group_0"]/li[1]')) #特區
         # //*[@id="group_0"]/li[2]
@@ -50,14 +49,14 @@ def Select_Ticket_Area(): # 選擇價格區
     time.sleep(0.5)
     return
 
-def Select_Ticket_Quantity(): # 選擇票數
+def Select_Ticket_Quantity(driver,Ticket_Count): # 選擇票數
     Ticket_Quantity = WebDriverWait(driver,10).until(
         EC.presence_of_element_located((By.XPATH, '//*[@id="TicketForm_ticketPrice_01"]')) 
     )
     select = Select(Ticket_Quantity)
     # Now we have many different alternatives to select an option.
-    select.select_by_index(4)
-    select.select_by_value('4') #Pass value as string
+    select.select_by_index(int(Ticket_Count))
+    select.select_by_value(Ticket_Count) #Pass value as string
 
     Checkbox = WebDriverWait(driver, 10).until(
         EC.element_to_be_clickable((By.XPATH, '//*[@id="TicketForm_agree"]'))
@@ -65,7 +64,7 @@ def Select_Ticket_Quantity(): # 選擇票數
     Checkbox.click()
 
     #驗證碼
-    captcha_filename = get_captcha_screenshot()
+    captcha_filename = get_captcha_screenshot(driver)
     print("captcha_filename:",captcha_filename)
     solved_captcha = send_captcha(captcha_filename)
     print("solved_captcha:",solved_captcha)
@@ -83,7 +82,7 @@ def Select_Ticket_Quantity(): # 選擇票數
     time.sleep(0.5)
     return
 
-def get_captcha_screenshot(): # 驗證碼截圖
+def get_captcha_screenshot(driver): # 驗證碼截圖
     # takes a screenshot and returns the filename captcha.png
 
     element =WebDriverWait(driver, 20).until(
@@ -96,7 +95,7 @@ def get_captcha_screenshot(): # 驗證碼截圖
     return fname
 
 def send_captcha(fname): # 辨識驗證碼
-    solver = TwoCaptcha(apiKey='91dec2ea4cee1487b6735e575021e1bd',pollingInterval=3)
+    solver = TwoCaptcha(apiKey='5f23bd9aa81f66bf7b71d1b8a3f1a849',pollingInterval=3)
     print('balance left USD', solver.balance())
     start = time.time()
     try:
@@ -122,7 +121,7 @@ def send_captcha(fname): # 辨識驗證碼
         print(e)
         return e
 
-def Select_Ticket_Pament(): #選擇價格區
+def Select_Ticket_Pament(driver): #選擇價格區
     Ticket_Pament = WebDriverWait(driver, 10).until(
         EC.element_to_be_clickable((By.XPATH, '//*[@id="PaymentForm_payment_id_36"]'))
     )
@@ -151,6 +150,9 @@ if __name__ == '__main__':
     # 步驟2獲取到的--profile-directory值
     # options.add_argument("--profile-directory=Profile 2")
     options.add_argument('--profile-directory=Default')
+
+    binary_path="C:\selenium_driver_chrome\chromedriver.exe"
+    service=Service(binary_path)
 
     driver = webdriver.Chrome(options=options, service=service)
 
