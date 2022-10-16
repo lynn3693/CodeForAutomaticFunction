@@ -59,11 +59,19 @@ def Main_tixcraft_ticket(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour,
     options.add_experimental_option('useAutomationExtension', False)
 
     # 步驟1獲取到的User Data路徑
+    User_Name=Name.get()
+    Data_Dir = r'--user-data-dir=C:\Users\USER\AppData\Local\Google\Chrome\User Data'
+    User_Data_Dir = Data_Dir.replace("USER", User_Name)
     # options.add_argument(r'--user-data-dir=C:\Users\Admin\AppData\Local\Google\Chrome\User Data')
-    options.add_argument(r'--user-data-dir=C:\Users\USER\AppData\Local\Google\Chrome\User Data')
+    # options.add_argument(r'--user-data-dir=C:\Users\USER\AppData\Local\Google\Chrome\User Data')
+    options.add_argument(User_Data_Dir)
     # 步驟2獲取到的--profile-directory值
+    # 查詢方式:chrome://version/
+    User_Data=Google_Data.get()
+    Google_Profile= '--profile-directory=' + User_Data
+    options.add_argument(Google_Profile)
     # options.add_argument("--profile-directory=Profile 2")
-    options.add_argument('--profile-directory=Default')
+    # options.add_argument('--profile-directory=Default')
 
     binary_path="C:\selenium_driver_chrome\chromedriver.exe"
     service=Service(binary_path)
@@ -88,6 +96,7 @@ def Main_tixcraft_ticket(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour,
         time.sleep(1)
     print('Program now starts on %s' % startTime)
     print('Executing...')
+    driver.refresh()
 
     Get_Ticket_Prepare(driver)
     Select_Ticket_Area(driver)
@@ -99,8 +108,15 @@ def Main_tixcraft_ticket(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour,
 
 def Input_Checking():
     User_url=url.get()
+    User_Name=Name.get()
+    User_Data=Google_Data.get()
+    print('User_Name:',User_Name)
+    print('User_Data:',User_Data)
 
-    Input_List = [len(User_url)]
+    Google_Profile= '--profile-directory=' + User_Data
+    print('Google_Profile:',Google_Profile)
+
+    Input_List = [len(User_url),len(User_Name),len(User_Data)]
 
     Check_Result=index_withoutexception(Input_List,0)
 
@@ -108,7 +124,7 @@ def Input_Checking():
     if  Check_Result == -1:
         Reservation_Checking()
     else:
-        messagebox.showinfo('showinfo', '沒有輸入搶票網址，請重新輸入')
+        messagebox.showinfo('showinfo', '請檢查搶票網址、電腦User Name和Google Profile Name 是否皆有輸入')
 
     return
 
@@ -154,6 +170,7 @@ if __name__ == '__main__':
     Hour.set('')            # 一開始設定沒有內容
     tk.Label(User_UI, text='時',font=('Arial',20,'bold')).place(relx=0.63, rely=0.2)
     tk.Entry(User_UI, textvariable=Hour,width=6).place(relx=0.55, rely=0.215)  # 放入 Entry
+    tk.Label(User_UI, text='*24小時制',font=('Arial',12,'bold')).place(relx=0.53, rely=0.27)
 
     Min = tk.StringVar()   # 建立文字變數
     Min.set('')            # 一開始設定沒有內容
@@ -165,6 +182,17 @@ if __name__ == '__main__':
     tk.Label(User_UI, text='欲購買張數:',font=('Arial',20,'bold')).place(relx=0, rely=0.3)
     tk.Entry(User_UI, textvariable=Ticket_Count,width=6).place(relx=0.25, rely=0.32)  # 放入 Entry
 
-    Submit_Button = tk.Button(User_UI, text='送出', font=('Arial',20), width=5, command=lambda: Input_Checking() ).place(relx=0.4, rely=0.4)
+    Name = tk.StringVar()   # 建立文字變數
+    Name.set('')            # 一開始設定沒有內容
+    tk.Label(User_UI, text='電腦User Name:',font=('Arial',20,'bold')).place(relx=0, rely=0.4)
+    tk.Entry(User_UI, textvariable=Name).place(relx=0.33, rely=0.42)  # 放入 Entry
+
+    Google_Data = tk.StringVar()   # 建立文字變數
+    Google_Data.set('')            # 一開始設定沒有內容
+    tk.Label(User_UI, text='Google Profile Name:',font=('Arial',20,'bold')).place(relx=0, rely=0.5)
+    OptionList = ['Default','Profile 2','Profile 3','Profile 4','Profile 5']   # 選項
+    menu = tk.OptionMenu(User_UI, Google_Data, *OptionList).place(relx=0.42, rely=0.5)                # 第二個參數是取值，第三個開始是選項，使用星號展開
+
+    Submit_Button = tk.Button(User_UI, text='送出', font=('Arial',20), width=5, command=lambda: Input_Checking() ).place(relx=0.4, rely=0.7)
 
     User_UI.mainloop()  # 放在主迴圈中
