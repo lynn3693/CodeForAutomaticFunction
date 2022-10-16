@@ -127,10 +127,10 @@ def Select_Ticket_Pament(driver): #選擇價格區
     )
     Ticket_Pament.click()
 
-    # Ticket_Sumit = WebDriverWait(driver, 10).until(
-    #     EC.element_to_be_clickable((By.XPATH, '//*[@id="submitButton"]'))
-    # )
-    # Ticket_Sumit.click()
+    Ticket_Sumit = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.XPATH, '//*[@id="submitButton"]'))
+    )
+    Ticket_Sumit.click()
 
     time.sleep(0.5)
     return
@@ -148,6 +148,7 @@ if __name__ == '__main__':
     # options.add_argument(r'--user-data-dir=C:\Users\Admin\AppData\Local\Google\Chrome\User Data')
     options.add_argument(r'--user-data-dir=C:\Users\USER\AppData\Local\Google\Chrome\User Data')
     # 步驟2獲取到的--profile-directory值
+    # 查詢方式:chrome://version/
     # options.add_argument("--profile-directory=Profile 2")
     options.add_argument('--profile-directory=Default')
 
