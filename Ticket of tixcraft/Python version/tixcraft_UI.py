@@ -62,8 +62,11 @@ def Reservation_Checking():
         messagebox.showinfo('showinfo', '預約搶票時間輸入有誤，必填項目:?月?日?時和搶票張數，請確認後重新輸入')
 
     User_Ticket_Count=Ticket_Count.get()
-    
-    Main_tixcraft_ticket(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour, Reserve_Min,User_Ticket_Count,Section_Order)
+
+    if  int(User_Ticket_Count) < 4:
+        Main_tixcraft_ticket(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour, Reserve_Min,User_Ticket_Count,Section_Order)
+    else:
+        messagebox.showinfo('showinfo', '票數不可以超過4張')
     
     return
 
