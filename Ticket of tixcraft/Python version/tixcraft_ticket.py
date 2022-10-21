@@ -64,20 +64,20 @@ def Select_Ticket_Quantity(driver,Ticket_Count): # 選擇票數
     Checkbox.click()
 
     #驗證碼
-    captcha_filename = get_captcha_screenshot(driver)
-    print("captcha_filename:",captcha_filename)
-    solved_captcha = send_captcha(captcha_filename)
-    print("solved_captcha:",solved_captcha)
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, '//*[@id="TicketForm_verifyCode"]'))
-    )
-    login_form_verify = driver.find_element(By.CSS_SELECTOR, '#TicketForm_verifyCode')
-    login_form_verify.send_keys(solved_captcha['code'])
+    # captcha_filename = get_captcha_screenshot(driver)
+    # print("captcha_filename:",captcha_filename)
+    # solved_captcha = send_captcha(captcha_filename)
+    # print("solved_captcha:",solved_captcha)
+    # WebDriverWait(driver, 10).until(
+    #     EC.presence_of_element_located((By.XPATH, '//*[@id="TicketForm_verifyCode"]'))
+    # )
+    # login_form_verify = driver.find_element(By.CSS_SELECTOR, '#TicketForm_verifyCode')
+    # login_form_verify.send_keys(solved_captcha['code'])
 
-    Ticket_Submit=WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.XPATH, '//*[@id="ticketPriceSubmit"]'))
-    )
-    Ticket_Submit.click()
+    # Ticket_Submit=WebDriverWait(driver, 10).until(
+    #     EC.element_to_be_clickable((By.XPATH, '//*[@id="ticketPriceSubmit"]'))
+    # )
+    # Ticket_Submit.click()
 
     time.sleep(0.5)
     return

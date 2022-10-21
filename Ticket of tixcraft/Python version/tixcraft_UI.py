@@ -26,6 +26,13 @@ def Reservation_Checking():
         Reserve_Min = int(Min.get())
         print('Minute:',Reserve_Min)
 
+    if Sec.get() == "":
+        Reserve_Sec =  0
+        print('Default Second:',Reserve_Sec)
+    else:
+        Reserve_Sec = int(Sec.get())
+        print('Second:',Reserve_Sec)
+
     Input_List = [len(Month.get()),len(Day.get()),len(Hour.get()),len(Ticket_Count.get())]
 
     Check_Result=index_withoutexception(Input_List,0)
@@ -101,7 +108,7 @@ def Main_tixcraft_ticket(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour,
     Get_Ticket_Prepare(driver)
     Select_Ticket_Area(driver)
     Select_Ticket_Quantity(driver,User_Ticket_Count)
-    Select_Ticket_Pament(driver)
+    # Select_Ticket_Pament(driver)
     time.sleep(300)
 
     return
@@ -176,6 +183,11 @@ if __name__ == '__main__':
     Min.set('')            # 一開始設定沒有內容
     tk.Label(User_UI, text='分',font=('Arial',20,'bold')).place(relx=0.78, rely=0.2)
     tk.Entry(User_UI, textvariable=Min,width=6).place(relx=0.7, rely=0.215)  # 放入 Entry
+
+    Sec = tk.StringVar()   # 建立文字變數
+    Sec.set('')            # 一開始設定沒有內容
+    tk.Label(User_UI, text='秒',font=('Arial',20,'bold')).place(relx=0.93, rely=0.2)
+    tk.Entry(User_UI, textvariable=Sec,width=6).place(relx=0.85, rely=0.215)  # 放入 Entry
 
     Ticket_Count = tk.StringVar()   # 建立文字變數
     Ticket_Count.set('')            # 一開始設定沒有內容
