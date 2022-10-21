@@ -5,7 +5,7 @@ import datetime
 from tkinter import messagebox
 from selenium_stealth import stealth
 from selenium.webdriver.chrome.service import Service
-from tixcraft_ticket import Buy_tickets,Get_Ticket_Prepare,Select_Ticket_Area,Select_Ticket_Quantity,Select_Ticket_Pament,get_captcha_screenshot,send_captcha
+from tixcraft_ticket import Buy_tickets,Get_Ticket_Prepare,Select_Ticket_Area,Select_Ticket_Quantity
 
 
 def Reservation_Checking():
@@ -34,8 +34,19 @@ def Reservation_Checking():
         print('Second:',Reserve_Sec)
 
     Input_List = [len(Month.get()),len(Day.get()),len(Hour.get()),len(Ticket_Count.get())]
-
     Check_Result=index_withoutexception(Input_List,0)
+
+    User_Session=Session_Value.get()
+    print('User_Session:',User_Session)
+    User_SelectSession=Session_Select.get()
+    print('User_SelectSession:',User_SelectSession)
+
+    if  User_Session == "單一場次":
+        Section_Order='//*[@id="gameList"]/table/tbody/tr/td[4]/input'
+        print('Section_Order:',Section_Order)
+    else:
+        Section_Order= '//*[@id="gameList"]/table/tbody/tr[' + User_SelectSession + ']/td[4]/input'
+        print('Section_Order:',Section_Order)
 
 
     if  Check_Result == -1:
@@ -52,11 +63,11 @@ def Reservation_Checking():
 
     User_Ticket_Count=Ticket_Count.get()
     
-    Main_tixcraft_ticket(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour, Reserve_Min,User_Ticket_Count)
+    Main_tixcraft_ticket(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour, Reserve_Min,User_Ticket_Count,Section_Order)
     
     return
 
-def Main_tixcraft_ticket(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour, Reserve_Min,User_Ticket_Count):
+def Main_tixcraft_ticket(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour, Reserve_Min,User_Ticket_Count,Section_Order):
     options = webdriver.ChromeOptions()
     options.add_argument("start-maximized")
 
@@ -104,11 +115,10 @@ def Main_tixcraft_ticket(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour,
     print('Program now starts on %s' % startTime)
     print('Executing...')
     driver.refresh()
-
-    Get_Ticket_Prepare(driver)
+    time.sleep(0.5)
+    Get_Ticket_Prepare(driver,Section_Order)
     Select_Ticket_Area(driver)
     Select_Ticket_Quantity(driver,User_Ticket_Count)
-    # Select_Ticket_Pament(driver)
     time.sleep(300)
 
     return
@@ -127,7 +137,6 @@ def Input_Checking():
 
     Check_Result=index_withoutexception(Input_List,0)
 
-
     if  Check_Result == -1:
         Reservation_Checking()
     else:
@@ -140,6 +149,7 @@ def index_withoutexception(self,i):
         return self.index(i)
     except:
         return -1
+
 
 if __name__ == '__main__':
     User_UI = tk.Tk()   # 建立 tkinter 視窗物件
@@ -162,6 +172,7 @@ if __name__ == '__main__':
     Year.set('')            # 一開始設定沒有內容
     tk.Label(User_UI, text='年',font=('Arial',20,'bold')).place(relx=0.18, rely=0.2)
     tk.Entry(User_UI, textvariable=Year,width=6).place(relx=0.1, rely=0.215)  # 放入 Entry
+    tk.Label(User_UI, text='*預設為今年',font=('Arial',12,'bold')).place(relx=0.08, rely=0.26)
 
     Month = tk.StringVar()   # 建立文字變數
     Month.set('')            # 一開始設定沒有內容
@@ -183,11 +194,13 @@ if __name__ == '__main__':
     Min.set('')            # 一開始設定沒有內容
     tk.Label(User_UI, text='分',font=('Arial',20,'bold')).place(relx=0.78, rely=0.2)
     tk.Entry(User_UI, textvariable=Min,width=6).place(relx=0.7, rely=0.215)  # 放入 Entry
+    tk.Label(User_UI, text='*預設為0',font=('Arial',12,'bold')).place(relx=0.68, rely=0.27)
 
     Sec = tk.StringVar()   # 建立文字變數
     Sec.set('')            # 一開始設定沒有內容
     tk.Label(User_UI, text='秒',font=('Arial',20,'bold')).place(relx=0.93, rely=0.2)
     tk.Entry(User_UI, textvariable=Sec,width=6).place(relx=0.85, rely=0.215)  # 放入 Entry
+    tk.Label(User_UI, text='*預設為0',font=('Arial',12,'bold')).place(relx=0.83, rely=0.27)
 
     Ticket_Count = tk.StringVar()   # 建立文字變數
     Ticket_Count.set('')            # 一開始設定沒有內容
@@ -205,6 +218,21 @@ if __name__ == '__main__':
     OptionList = ['Default','Profile 2','Profile 3','Profile 4','Profile 5']   # 選項
     menu = tk.OptionMenu(User_UI, Google_Data, *OptionList).place(relx=0.42, rely=0.5)                # 第二個參數是取值，第三個開始是選項，使用星號展開
 
-    Submit_Button = tk.Button(User_UI, text='送出', font=('Arial',20), width=5, command=lambda: Input_Checking() ).place(relx=0.4, rely=0.7)
+    tk.Label(User_UI, text='場次類型:',font=('Arial',20,'bold')).place(relx=0, rely=0.6)
+    Session_List = ['單一場次','多場次']   # 選項
+    Session_Value = tk.StringVar()  # 取值
+    Session_Value.set('')
+    Session_Menu = tk.OptionMenu(User_UI, Session_Value, *Session_List)                # 第二個參數是取值，第三個開始是選項，使用星號展開
+    Session_Menu.place(relx=0.2, rely=0.6)  
+
+    tk.Label(User_UI, text='愈搶的場次順序:',font=('Arial',20,'bold')).place(relx=0, rely=0.7)
+    Session_SelectList = [1,2,3,4,5,6,7,8,9,10]   # 選項
+    Session_Select = tk.StringVar()  # 取值
+    Session_Select.set('')
+    Session_Result = tk.OptionMenu(User_UI, Session_Select, *Session_SelectList)
+    Session_Result.place(relx=0.32, rely=0.7)
+    tk.Label(User_UI, text='*多場次才需要填寫此部分',font=('Arial',12,'bold')).place(relx=0, rely=0.77)
+    
+    Submit_Button = tk.Button(User_UI, text='送出', font=('Arial',20), width=5, command=lambda: Input_Checking() ).place(relx=0.4, rely=0.85)
 
     User_UI.mainloop()  # 放在主迴圈中

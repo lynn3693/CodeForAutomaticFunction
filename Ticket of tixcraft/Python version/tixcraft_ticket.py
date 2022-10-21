@@ -7,10 +7,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 import time
-from twocaptcha import TwoCaptcha
-from twocaptcha.api import ApiException, NetworkException
-from twocaptcha.solver import ValidationException
-from selenium.common.exceptions import TimeoutException
 
 def Buy_tickets(driver,url): # 買票準備(Google登入)
     driver.get(url)
@@ -26,13 +22,15 @@ def Buy_tickets(driver,url): # 買票準備(Google登入)
     time.sleep(0.5)
     return
 
-def Get_Ticket_Prepare(driver): # 選擇時間場次
+def Get_Ticket_Prepare(driver,Section_Order): # 選擇時間場次
+    # 點選立即購票
     GetTicket = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, '//*[@id="content"]/div/div/ul/li[1]/a'))
     )
     GetTicket.click()
+    # 點選場次
     Ticket_Section = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.XPATH, '//*[@id="gameList"]/table/tbody/tr/td[4]/input'))
+        EC.element_to_be_clickable((By.XPATH, Section_Order))
     )
     Ticket_Section.click()
     time.sleep(0.5)
@@ -40,9 +38,9 @@ def Get_Ticket_Prepare(driver): # 選擇時間場次
 
 def Select_Ticket_Area(driver): # 選擇價格區
     Ticket_Area = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.XPATH, '//*[@id="group_0"]/li[1]')) #特區
-        # //*[@id="group_0"]/li[2]
-        # //*[@id="group_0"]/li[3]
+        EC.element_to_be_clickable((By.XPATH, '//*[@id="group_0"]/li[1]')) #特區第一欄
+        # //*[@id="group_0"]/li[2] #特區第2欄
+        # //*[@id="group_0"]/li[3] #特區第3欄
     )
     Ticket_Area.click()
 
@@ -63,65 +61,10 @@ def Select_Ticket_Quantity(driver,Ticket_Count): # 選擇票數
     )
     Checkbox.click()
 
-    #驗證碼
-    # captcha_filename = get_captcha_screenshot(driver)
-    # print("captcha_filename:",captcha_filename)
-    # solved_captcha = send_captcha(captcha_filename)
-    # print("solved_captcha:",solved_captcha)
-    # WebDriverWait(driver, 10).until(
-    #     EC.presence_of_element_located((By.XPATH, '//*[@id="TicketForm_verifyCode"]'))
-    # )
-    # login_form_verify = driver.find_element(By.CSS_SELECTOR, '#TicketForm_verifyCode')
-    # login_form_verify.send_keys(solved_captcha['code'])
-
-    # Ticket_Submit=WebDriverWait(driver, 10).until(
-    #     EC.element_to_be_clickable((By.XPATH, '//*[@id="ticketPriceSubmit"]'))
-    # )
-    # Ticket_Submit.click()
-
     time.sleep(0.5)
     return
 
-def get_captcha_screenshot(driver): # 驗證碼截圖
-    # takes a screenshot and returns the filename captcha.png
-
-    element =WebDriverWait(driver, 20).until(
-        EC.visibility_of_element_located((By.CSS_SELECTOR, "#yw0"))
-    )
-
-    fname = "captcha.png"
-    element.screenshot(fname)
-    # time.sleep(1)
-    return fname
-
-def send_captcha(fname): # 辨識驗證碼
-    solver = TwoCaptcha(apiKey='5f23bd9aa81f66bf7b71d1b8a3f1a849',pollingInterval=3)
-    print('balance left USD', solver.balance())
-    start = time.time()
-    try:
-        result = solver.normal(fname)
-        end = time.time()
-        print('result',result)
-        print('elapsed time：', str(round(end - start, 2)))
-        return result
-    except ValidationException as e:
-        # invalid parameters passed
-        print(e)
-        return e
-    except NetworkException as e:
-        # network error occurred
-        print(e)
-        return e
-    except ApiException as e:
-        # api respond with error
-        print(e)
-        return e
-    except TimeoutException as e:
-        # captcha is not solved so far
-        print(e)
-        return e
-
-def Select_Ticket_Pament(driver): #選擇價格區
+def Select_Ticket_Pament(driver):
     Ticket_Pament = WebDriverWait(driver, 10).until(
         EC.element_to_be_clickable((By.XPATH, '//*[@id="PaymentForm_payment_id_36"]'))
     )
