@@ -5,7 +5,7 @@ import datetime
 from tkinter import messagebox
 from selenium_stealth import stealth
 from selenium.webdriver.chrome.service import Service
-from tixcraft_ticket import Tixcraft_GoogleLogin,Select_Ticket_TimeAndSession,Select_Ticket_Area,Select_Ticket_Quantity,Retry_Detect
+from tixcraft_ticket import Tixcraft_GoogleLogin,Select_Ticket_TimeAndSession,Select_Ticket_Area,Select_Ticket_Quantity,Retry_Detect,Question_page
 
 def Reservation_Checking():
     
@@ -161,10 +161,10 @@ def Main_tixcraft_ticket(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour,
         print('成功搶到票，程式進入休眠....')
     else:
         print('Executing program in question mode...')
-        # Question_page(driver)
         Select_Ticket_TimeAndSession(driver,Section_Order)
+        Question_page(User_url,Section_Order,driver)
         Ticket_Area_url=Select_Ticket_Area(driver,Target_PriceList,User_Ticket_Count)
-        Select_Ticket_Quantity(driver,User_url,Section_Order,User_Ticket_Count,Ticket_Area_url,Target_PriceList,User_Ticket_Count)
+        Select_Ticket_Quantity(driver,User_url,Section_Order,User_Ticket_Count,Ticket_Area_url,Target_PriceList,User_Ticket_Count,Target_Mode)
         print('成功搶到票，程式進入休眠....')
     time.sleep(6000)
 
@@ -176,33 +176,12 @@ def Input_Checking():
     User_Data=Google_Data.get()
     print('User_Name:',User_Name)
     print('User_Data:',User_Data)
-    # Target_Mode=Question_Mode.get()
-    # print('Target_Mode:',Target_Mode)
-    Target_PriceList = []
-    if Target_Price1.get():
-        print('Target_Price1:',Target_Price1.get())
-        element= int(Target_Price1.get()) - 1
-        if element not in Target_PriceList:
-            Target_PriceList.append(element)
-
-    if Target_Price2.get():
-        print('Target_Price2:',Target_Price2.get())
-        element= int(Target_Price2.get()) - 1
-        if element not in Target_PriceList:
-            Target_PriceList.append(element)
-
-    if Target_Price3.get():
-        print('Target_Price3:',Target_Price3.get())
-        element= int(Target_Price3.get()) - 1
-        if element not in Target_PriceList:
-            Target_PriceList.append(element)
-    print('Target_PriceList:',Target_PriceList)
 
 
     Google_Profile= '--profile-directory=' + User_Data
     print('Google_Profile:',Google_Profile)
 
-    Input_List = [len(User_url),len(User_Name),len(User_Data),len(Target_PriceList)]
+    Input_List = [len(User_url),len(User_Name),len(User_Data)]
 
     Check_Result=index_withoutexception(Input_List,0)
     

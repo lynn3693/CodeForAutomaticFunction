@@ -84,7 +84,7 @@ def Select_Ticket_Area(driver,Target_PriceList,User_Ticket_Count): # 選擇價�
     time.sleep(0.5)
     return Ticket_Area_url
 
-def Select_Ticket_Quantity(driver,url,Section_Order,Ticket_Count,Area_url,Target_PriceList,User_Ticket_Count): # 選擇票數
+def Select_Ticket_Quantity(driver,url,Section_Order,Ticket_Count,Area_url,Target_PriceList,User_Ticket_Count,Target_Mode="False"): # 選擇票數
 
     Ticket_Quantity = WebDriverWait(driver,10).until(
         EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div[2]/div[2]/div/form/div[1]/table/tbody/tr/td[2]/select')) 
@@ -105,7 +105,7 @@ def Select_Ticket_Quantity(driver,url,Section_Order,Ticket_Count,Area_url,Target
         except NoAlertPresentException:
             get_url = driver.current_url
             if get_url == "https://tixcraft.com/ticket/order":
-                Retry_Detect(driver,url,Section_Order,Ticket_Count,Area_url,Target_PriceList,User_Ticket_Count)
+                Retry_Detect(driver,url,Section_Order,Ticket_Count,Area_url,Target_PriceList,User_Ticket_Count,Target_Mode)
                 return
         else:
             print("Warning: unexpected alert ({})".format(alert.text))
@@ -113,7 +113,7 @@ def Select_Ticket_Quantity(driver,url,Section_Order,Ticket_Count,Area_url,Target
             Select_Ticket_Quantity(driver,url,Section_Order,Ticket_Count,Area_url,Target_PriceList,User_Ticket_Count)
             return
 
-def Retry_Detect(driver,url,Section_Order,Ticket_Count,Area_url,Target_PriceList,User_Ticket_Count): #若被踢出要重try
+def Retry_Detect(driver,url,Section_Order,Ticket_Count,Area_url,Target_PriceList,User_Ticket_Count,Target_Mode="False"): #若被踢出要重try
     get_url = driver.current_url
     print('重試偵測啟動')
     print('現在網頁網址為 %s' % get_url)
@@ -139,9 +139,14 @@ def Retry_Detect(driver,url,Section_Order,Ticket_Count,Area_url,Target_PriceList
         elif get_url == url:
             print('偵測網頁網址為 %s' % get_url)
             print('重新執行搶票')
-            Select_Ticket_TimeAndSession(driver,Section_Order)
-            Select_Ticket_Area(driver,Target_PriceList,User_Ticket_Count)
-            Select_Ticket_Quantity(driver,url,Section_Order,Ticket_Count,Area_url,Target_PriceList,User_Ticket_Count)
+            if Target_Mode=="False":
+                Select_Ticket_TimeAndSession(driver,Section_Order)
+                Select_Ticket_Area(driver,Target_PriceList,User_Ticket_Count)
+                Select_Ticket_Quantity(driver,url,Section_Order,Ticket_Count,Area_url,Target_PriceList,User_Ticket_Count)
+            else:
+                Select_Ticket_TimeAndSession(driver,Section_Order)
+                Question_page(url,Section_Order,driver)
+                Select_Ticket_Quantity(driver,url,Section_Order,Ticket_Count,Area_url,Target_PriceList,User_Ticket_Count,Target_Mode)
         elif get_url == Area_url:
             print('偵測網頁網址為 %s' % get_url)
             print('重新開始偵測座位狀態....')
@@ -162,8 +167,29 @@ def Select_Ticket_Pament(driver):
     time.sleep(0.5)
     return
 
-def Question_page(driver):
-    return
+def Question_page(url,Section_Order,driver):
+    print('進入問題頁面，請使用者開始作答問題....')
+    Question_Page_url = driver.current_url
+    print('Question_Page_url:',Question_Page_url)
+    while True:
+        get_url = driver.current_url
+        print('get_url:',get_url)
+        if get_url == url:
+            print('偵測到使用者作答問題失敗，網頁已回到前一頁....')
+            Select_Ticket_TimeAndSession(driver,Section_Order)
+        elif get_url == Question_Page_url:
+            print('使用者作答問題中....')
+            try:
+                alert = driver.switch_to.alert
+            except NoAlertPresentException:
+                continue
+            else:
+                print("Warning: unexpected alert ({})".format(alert.text))
+                alert.accept()
+        else:
+            print('偵測到使用者作答問題成功....')
+            return
+
 
 if __name__ == '__main__':
     options = webdriver.ChromeOptions()
