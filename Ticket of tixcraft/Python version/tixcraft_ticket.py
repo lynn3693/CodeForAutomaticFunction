@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from msilib.schema import Condition
 from selenium import webdriver
 from selenium_stealth import stealth
 from selenium.webdriver.chrome.service import Service
@@ -7,8 +8,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 import time
+from selenium.common.exceptions import UnexpectedAlertPresentException,NoAlertPresentException
+import re
 
-def Buy_tickets(driver,url): # 買票準備(Google登入)
+def Tixcraft_GoogleLogin(driver,url): # 買票準備(Google登入)
     driver.get(url)
     LoginArea = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, "/html/body/div[1]/div[1]/div[2]/div[1]/div/div[2]/div/ul/li[3]/a"))
@@ -22,7 +25,7 @@ def Buy_tickets(driver,url): # 買票準備(Google登入)
     time.sleep(0.5)
     return
 
-def Get_Ticket_Prepare(driver,Section_Order): # 選擇時間場次
+def Select_Ticket_TimeAndSession(driver,Section_Order): # 選擇時間場次
     # 點選立即購票
     GetTicket = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, '//*[@id="content"]/div/div/ul/li[1]/a'))
@@ -36,20 +39,55 @@ def Get_Ticket_Prepare(driver,Section_Order): # 選擇時間場次
     time.sleep(0.5)
     return
 
-def Select_Ticket_Area(driver): # 選擇價格區
-    Ticket_Area = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.XPATH, '//*[@id="group_0"]/li[1]')) #特區第一欄
-        # //*[@id="group_0"]/li[2] #特區第2欄
-        # //*[@id="group_0"]/li[3] #特區第3欄
-    )
-    Ticket_Area.click()
+def Select_Ticket_Area(driver,Target_PriceList,User_Ticket_Count): # 選擇價格區
+
+    for Target_Price in Target_PriceList:
+        print('目標價格編號為: %s' % Target_Price)
+        Target_Area='//*[@id="group_'+ str(Target_Price) + '"]'
+        print('目標價格所屬Group為: %s' % Target_Area)
+        AreaInfo_List=driver.find_element(By.XPATH, Target_Area).get_attribute('innerHTML')
+        AreaId_List = re.findall('id=\"(.*?)\"',AreaInfo_List)
+        print('AreaId List: %s' % AreaId_List)
+        Seat_Count_Dictionary = {}
+        for AreaId in AreaId_List:
+            Seat_XpathId='//*[@id=\"'+ AreaId + '\"]/font'
+            print('Seat_XpathId: %s' % Seat_XpathId)
+            Seat=driver.find_element(By.XPATH, Seat_XpathId).get_attribute('innerHTML')
+            print('座位狀態: %s' % Seat)
+            Seat_Count=re.search(r'\d+', Seat)
+            print('搜尋剩餘座位數量: %s' % Seat_Count)
+            if Seat_Count:
+                Remain_Seat= Seat_Count.group(0)
+                print('剩餘座位:',Remain_Seat)
+                if int(Remain_Seat) > int(User_Ticket_Count):
+                    Seat_Count_Dictionary[AreaId] = int(Remain_Seat)
+                else:
+                    Seat_Count_Dictionary[AreaId] = 0
+            print('Seat_Count_Dictionary:',Seat_Count_Dictionary)
+
+    if len(Seat_Count_Dictionary) > 0:
+        Choose_Element = max(Seat_Count_Dictionary, key=Seat_Count_Dictionary.get)
+        print('目標選擇: %s' % Choose_Element)
+        Seat_XpathId='//*[@id=\"'+ Choose_Element + '\"]/font'
+        Choose_Ticket = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, Seat_XpathId))
+        )
+        Ticket_Area_url = driver.current_url
+        Choose_Ticket.click()
+        return Ticket_Area_url
+    else:
+        print('目標價格皆沒有座位，開始刷新頁面')
+        driver.refresh()
+        time.sleep(0.5)
+        Select_Ticket_Area(driver,Target_PriceList,User_Ticket_Count)
 
     time.sleep(0.5)
-    return
+    return Ticket_Area_url
 
-def Select_Ticket_Quantity(driver,Ticket_Count): # 選擇票數
+def Select_Ticket_Quantity(driver,url,Section_Order,Ticket_Count,Area_url,Target_PriceList,User_Ticket_Count): # 選擇票數
+
     Ticket_Quantity = WebDriverWait(driver,10).until(
-        EC.presence_of_element_located((By.XPATH, '//*[@id="TicketForm_ticketPrice_01"]')) 
+        EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div[2]/div[2]/div/form/div[1]/table/tbody/tr/td[2]/select')) 
     )
     select = Select(Ticket_Quantity)
     # Now we have many different alternatives to select an option.
@@ -61,8 +99,54 @@ def Select_Ticket_Quantity(driver,Ticket_Count): # 選擇票數
     )
     Checkbox.click()
 
-    time.sleep(0.5)
-    return
+    while True:
+        try:
+            alert = driver.switch_to.alert
+        except NoAlertPresentException:
+            get_url = driver.current_url
+            if get_url == "https://tixcraft.com/ticket/order":
+                Retry_Detect(driver,url,Section_Order,Ticket_Count,Area_url,Target_PriceList,User_Ticket_Count)
+                return
+        else:
+            print("Warning: unexpected alert ({})".format(alert.text))
+            alert.accept()
+            Select_Ticket_Quantity(driver,url,Section_Order,Ticket_Count,Area_url,Target_PriceList,User_Ticket_Count)
+            return
+
+def Retry_Detect(driver,url,Section_Order,Ticket_Count,Area_url,Target_PriceList,User_Ticket_Count): #若被踢出要重try
+    get_url = driver.current_url
+    print('重試偵測啟動')
+    print('現在網頁網址為 %s' % get_url)
+
+    while True:
+        get_url = driver.current_url
+        if get_url == "https://tixcraft.com/ticket/order":
+            print('拓元網址轉圈等待中，程式維持不動....')
+            print('重新偵測網頁網址為 %s' % get_url)
+            try:
+                alert = driver.switch_to.alert
+            except NoAlertPresentException:
+                continue
+            else:
+                print("Warning: unexpected alert ({})".format(alert.text))
+                alert.accept()
+            time.sleep(0.5)
+        elif get_url == "https://tixcraft.com/ticket/checkout":
+            print('重新偵測網頁網址為 %s' % get_url)
+            print('成功搶到票，請使用者進行付款選擇....')
+            # Select_Ticket_Pament(driver)
+            return
+        elif get_url == url:
+            print('偵測網頁網址為 %s' % get_url)
+            print('重新執行搶票')
+            Select_Ticket_TimeAndSession(driver,Section_Order)
+            Select_Ticket_Area(driver,Target_PriceList,User_Ticket_Count)
+            Select_Ticket_Quantity(driver,url,Section_Order,Ticket_Count,Area_url,Target_PriceList,User_Ticket_Count)
+        elif get_url == Area_url:
+            print('偵測網頁網址為 %s' % get_url)
+            print('重新開始偵測座位狀態....')
+            Select_Ticket_Area(driver,Target_PriceList,User_Ticket_Count)
+            Select_Ticket_Quantity(driver,url,Section_Order,Ticket_Count,Area_url,Target_PriceList,User_Ticket_Count)
 
 def Select_Ticket_Pament(driver):
     Ticket_Pament = WebDriverWait(driver, 10).until(
@@ -76,6 +160,9 @@ def Select_Ticket_Pament(driver):
     Ticket_Sumit.click()
 
     time.sleep(0.5)
+    return
+
+def Question_page(driver):
     return
 
 if __name__ == '__main__':
@@ -109,10 +196,11 @@ if __name__ == '__main__':
             fix_hairline=True,
             )
 
-    url = "https://tixcraft.com/activity/detail/22_aayan1120"
-    Buy_tickets(url)
-    Get_Ticket_Prepare()
-    Select_Ticket_Area()
-    Select_Ticket_Quantity()
-    Select_Ticket_Pament()
+    url = "https://tixcraft.com/ticket/area/22_WuBaiOPR/11325"
+    # Buy_tickets(url)
+    # Get_Ticket_Prepare()
+    Select_Ticket_Area(url,driver)
+    # Select_Ticket_Quantity()
+    # Select_Ticket_Pament()
+    # Retry_Detect(driver,url)
 

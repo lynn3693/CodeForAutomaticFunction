@@ -5,10 +5,43 @@ import datetime
 from tkinter import messagebox
 from selenium_stealth import stealth
 from selenium.webdriver.chrome.service import Service
-from tixcraft_ticket import Buy_tickets,Get_Ticket_Prepare,Select_Ticket_Area,Select_Ticket_Quantity
-
+from tixcraft_ticket import Tixcraft_GoogleLogin,Select_Ticket_TimeAndSession,Select_Ticket_Area,Select_Ticket_Quantity,Retry_Detect
 
 def Reservation_Checking():
+    
+    User_Session=Session_Value.get()
+    print('User_Session:',User_Session)
+    User_SelectSession=Session_Select.get()
+    print('User_SelectSession:',User_SelectSession)
+
+    if  User_Session == "單一場次":
+        Section_Order='//*[@id="gameList"]/table/tbody/tr/td[4]/input'
+        print('Section_Order:',Section_Order)
+    else:
+        Section_Order= '//*[@id="gameList"]/table/tbody/tr[' + User_SelectSession + ']/td[4]/input'
+        print('Section_Order:',Section_Order)
+
+
+    Target_PriceList = []
+    if Target_Price1.get():
+        print('Target_Price1:',Target_Price1.get())
+        element= int(Target_Price1.get()) - 1
+        if element not in Target_PriceList:
+            Target_PriceList.append(element)
+
+    if Target_Price2.get():
+        print('Target_Price2:',Target_Price2.get())
+        element= int(Target_Price2.get()) - 1
+        if element not in Target_PriceList:
+            Target_PriceList.append(element)
+
+    if Target_Price3.get():
+        print('Target_Price3:',Target_Price3.get())
+        element= int(Target_Price3.get()) - 1
+        if element not in Target_PriceList:
+            Target_PriceList.append(element)
+    print('Target_PriceList:',Target_PriceList)
+
     Today = datetime.datetime.now()
     Tomorrow = Today + datetime.timedelta(days=1)
 
@@ -33,21 +66,21 @@ def Reservation_Checking():
         Reserve_Sec = int(Sec.get())
         print('Second:',Reserve_Sec)
 
-    Input_List = [len(Month.get()),len(Day.get()),len(Hour.get()),len(Ticket_Count.get())]
+    Input_List = [len(Month.get()),len(Day.get()),len(Hour.get()),len(Ticket_Count.get()),len(Target_PriceList)]
     Check_Result=index_withoutexception(Input_List,0)
 
-    User_Session=Session_Value.get()
-    print('User_Session:',User_Session)
-    User_SelectSession=Session_Select.get()
-    print('User_SelectSession:',User_SelectSession)
+    
+    if  len(Month.get()) == 0 | len(Day.get()) ==0 :
+        messagebox.showinfo('showinfo', '請輸入幾月幾號開搶')
+    
+    if  len(Hour.get()) ==0 :
+        messagebox.showinfo('showinfo', '請輸入幾點開搶')
 
-    if  User_Session == "單一場次":
-        Section_Order='//*[@id="gameList"]/table/tbody/tr/td[4]/input'
-        print('Section_Order:',Section_Order)
-    else:
-        Section_Order= '//*[@id="gameList"]/table/tbody/tr[' + User_SelectSession + ']/td[4]/input'
-        print('Section_Order:',Section_Order)
+    if  len(Ticket_Count.get()) ==0 :
+        messagebox.showinfo('showinfo', '請輸入搶票張數')
 
+    if  len(Target_PriceList) == 0:
+        messagebox.showinfo('showinfo', '請至少輸入一個目標價格編號')
 
     if  Check_Result == -1:
         Reserve_Month = int(Month.get())
@@ -58,19 +91,17 @@ def Reservation_Checking():
 
         Reserve_Hour = int(Hour.get())
         print('Hour:',Reserve_Hour)
-    else:
-        messagebox.showinfo('showinfo', '預約搶票時間輸入有誤，必填項目:?月?日?時和搶票張數，請確認後重新輸入')
 
     User_Ticket_Count=Ticket_Count.get()
 
-    if  int(User_Ticket_Count) < 4:
-        Main_tixcraft_ticket(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour, Reserve_Min,User_Ticket_Count,Section_Order)
+    if  int(User_Ticket_Count) < 5:
+        Main_tixcraft_ticket(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour, Reserve_Min,User_Ticket_Count,Section_Order,Target_PriceList)
     else:
         messagebox.showinfo('showinfo', '票數不可以超過4張')
     
     return
 
-def Main_tixcraft_ticket(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour, Reserve_Min,User_Ticket_Count,Section_Order):
+def Main_tixcraft_ticket(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour, Reserve_Min,User_Ticket_Count,Section_Order,Target_PriceList):
     options = webdriver.ChromeOptions()
     options.add_argument("start-maximized")
 
@@ -100,7 +131,7 @@ def Main_tixcraft_ticket(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour,
     driver = webdriver.Chrome(options=options, service=service)
 
     stealth(driver,
-            languages=["en-US", "en"],
+            languages=["zh-TW", "tw"],
             vendor="Google Inc.",
             platform="Win32",
             webgl_vendor="Intel Inc.",
@@ -110,7 +141,7 @@ def Main_tixcraft_ticket(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour,
 
     User_url=url.get()
 
-    Buy_tickets(driver,User_url)
+    Tixcraft_GoogleLogin(driver,User_url)
 
     startTime = datetime.datetime(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour, Reserve_Min, 0)
     while datetime.datetime.now() < startTime:
@@ -119,10 +150,23 @@ def Main_tixcraft_ticket(Reserve_Year, Reserve_Month, Reserve_Day, Reserve_Hour,
     print('Executing...')
     driver.refresh()
     time.sleep(0.5)
-    Get_Ticket_Prepare(driver,Section_Order)
-    Select_Ticket_Area(driver)
-    Select_Ticket_Quantity(driver,User_Ticket_Count)
-    time.sleep(300)
+
+    Target_Mode=Question_Mode.get()
+    print('Target_Mode is:',Target_Mode)
+    if Target_Mode=="False":
+        print('Executing program in normal mode...')
+        Select_Ticket_TimeAndSession(driver,Section_Order)
+        Ticket_Area_url=Select_Ticket_Area(driver,Target_PriceList,User_Ticket_Count)
+        Select_Ticket_Quantity(driver,User_url,Section_Order,User_Ticket_Count,Ticket_Area_url,Target_PriceList,User_Ticket_Count)
+        print('成功搶到票，程式進入休眠....')
+    else:
+        print('Executing program in question mode...')
+        # Question_page(driver)
+        Select_Ticket_TimeAndSession(driver,Section_Order)
+        Ticket_Area_url=Select_Ticket_Area(driver,Target_PriceList,User_Ticket_Count)
+        Select_Ticket_Quantity(driver,User_url,Section_Order,User_Ticket_Count,Ticket_Area_url,Target_PriceList,User_Ticket_Count)
+        print('成功搶到票，程式進入休眠....')
+    time.sleep(6000)
 
     return
 
@@ -132,18 +176,47 @@ def Input_Checking():
     User_Data=Google_Data.get()
     print('User_Name:',User_Name)
     print('User_Data:',User_Data)
+    # Target_Mode=Question_Mode.get()
+    # print('Target_Mode:',Target_Mode)
+    Target_PriceList = []
+    if Target_Price1.get():
+        print('Target_Price1:',Target_Price1.get())
+        element= int(Target_Price1.get()) - 1
+        if element not in Target_PriceList:
+            Target_PriceList.append(element)
+
+    if Target_Price2.get():
+        print('Target_Price2:',Target_Price2.get())
+        element= int(Target_Price2.get()) - 1
+        if element not in Target_PriceList:
+            Target_PriceList.append(element)
+
+    if Target_Price3.get():
+        print('Target_Price3:',Target_Price3.get())
+        element= int(Target_Price3.get()) - 1
+        if element not in Target_PriceList:
+            Target_PriceList.append(element)
+    print('Target_PriceList:',Target_PriceList)
+
 
     Google_Profile= '--profile-directory=' + User_Data
     print('Google_Profile:',Google_Profile)
 
-    Input_List = [len(User_url),len(User_Name),len(User_Data)]
+    Input_List = [len(User_url),len(User_Name),len(User_Data),len(Target_PriceList)]
 
     Check_Result=index_withoutexception(Input_List,0)
+    
+    if  len(User_url) == 0:
+        messagebox.showinfo('showinfo', '請輸入目標網址')
+
+    if  len(User_Name) == 0:
+        messagebox.showinfo('showinfo', '請輸入電腦User Name')
+    
+    if  len(User_Data) == 0:
+        messagebox.showinfo('showinfo', '請輸入Google Profile Name')
 
     if  Check_Result == -1:
         Reservation_Checking()
-    else:
-        messagebox.showinfo('showinfo', '請檢查搶票網址、電腦User Name和Google Profile Name 是否皆有輸入')
 
     return
 
@@ -158,7 +231,7 @@ if __name__ == '__main__':
     User_UI = tk.Tk()   # 建立 tkinter 視窗物件
     User_UI.title('拓元自動搶票程式') # 設定標題
     width = 700
-    height = 500
+    height = 900
     left = 0
     top = 0
     User_UI.geometry(f'{width}x{height}+{left}+{top}')  # 定義視窗的尺寸和位置
@@ -205,37 +278,63 @@ if __name__ == '__main__':
     tk.Entry(User_UI, textvariable=Sec,width=6).place(relx=0.85, rely=0.215)  # 放入 Entry
     tk.Label(User_UI, text='*預設為0',font=('Arial',12,'bold')).place(relx=0.83, rely=0.27)
 
+    Question_Mode = tk.StringVar()   # 建立文字變數
+    Question_Mode.set('')            # 一開始設定沒有內容
+    tk.Label(User_UI, text='是否有問題要回答:',font=('Arial',20,'bold')).place(relx=0, rely=0.32)
+    On_btn = tk.Radiobutton(User_UI, text='是',font=('Arial',12,'bold'),variable=Question_Mode, value='True').place(relx=0, rely=0.4)
+
+    Off_btn = tk.Radiobutton(User_UI, text='否',font=('Arial',12,'bold'),variable=Question_Mode, value='False')
+    Off_btn.select()
+    Off_btn.place(relx=0.15, rely=0.4)
+
     Ticket_Count = tk.StringVar()   # 建立文字變數
     Ticket_Count.set('')            # 一開始設定沒有內容
-    tk.Label(User_UI, text='欲購買張數:',font=('Arial',20,'bold')).place(relx=0, rely=0.3)
-    tk.Entry(User_UI, textvariable=Ticket_Count,width=6).place(relx=0.25, rely=0.32)  # 放入 Entry
+    tk.Label(User_UI, text='欲購買張數:',font=('Arial',20,'bold')).place(relx=0, rely=0.48)
+    tk.Entry(User_UI, textvariable=Ticket_Count,width=6).place(relx=0.25, rely=0.49)  # 放入 Entry
+
+    Target_Price1 = tk.StringVar()   # 建立文字變數
+    Target_Price1.set('')            # 一開始設定沒有內容
+    tk.Label(User_UI, text='目標價格編號:',font=('Arial',20,'bold')).place(relx=0, rely=0.6)
+    tk.Label(User_UI, text='第一目標',font=('Arial',12,'bold')).place(relx=0.28, rely=0.57)
+    tk.Entry(User_UI, textvariable=Target_Price1,width=6).place(relx=0.3, rely=0.62)  # 放入 Entry
+
+    Target_Price2 = tk.StringVar()   # 建立文字變數
+    Target_Price2.set('')            # 一開始設定沒有內容
+    tk.Label(User_UI, text='第二目標',font=('Arial',12,'bold')).place(relx=0.43, rely=0.57)
+    tk.Entry(User_UI, textvariable=Target_Price2,width=6).place(relx=0.45, rely=0.62)  # 放入 Entry
+
+    Target_Price3 = tk.StringVar()   # 建立文字變數
+    Target_Price3.set('')            # 一開始設定沒有內容
+    tk.Label(User_UI, text='第三目標',font=('Arial',12,'bold')).place(relx=0.58, rely=0.57)
+    tk.Entry(User_UI, textvariable=Target_Price3,width=6).place(relx=0.6, rely=0.62)  # 放入 Entry
+
 
     Name = tk.StringVar()   # 建立文字變數
     Name.set('')            # 一開始設定沒有內容
-    tk.Label(User_UI, text='電腦User Name:',font=('Arial',20,'bold')).place(relx=0, rely=0.4)
-    tk.Entry(User_UI, textvariable=Name).place(relx=0.33, rely=0.42)  # 放入 Entry
+    tk.Label(User_UI, text='電腦User Name:',font=('Arial',20,'bold')).place(relx=0, rely=0.68)
+    tk.Entry(User_UI, textvariable=Name).place(relx=0.33, rely=0.7)  # 放入 Entry
 
     Google_Data = tk.StringVar()   # 建立文字變數
     Google_Data.set('')            # 一開始設定沒有內容
-    tk.Label(User_UI, text='Google Profile Name:',font=('Arial',20,'bold')).place(relx=0, rely=0.5)
+    tk.Label(User_UI, text='Google Profile Name:',font=('Arial',20,'bold')).place(relx=0, rely=0.75)
     OptionList = ['Default','Profile 2','Profile 3','Profile 4','Profile 5']   # 選項
-    menu = tk.OptionMenu(User_UI, Google_Data, *OptionList).place(relx=0.42, rely=0.5)                # 第二個參數是取值，第三個開始是選項，使用星號展開
+    menu = tk.OptionMenu(User_UI, Google_Data, *OptionList).place(relx=0.42, rely=0.76)                # 第二個參數是取值，第三個開始是選項，使用星號展開
 
-    tk.Label(User_UI, text='場次類型:',font=('Arial',20,'bold')).place(relx=0, rely=0.6)
+    tk.Label(User_UI, text='場次類型:',font=('Arial',20,'bold')).place(relx=0, rely=0.8)
     Session_List = ['單一場次','多場次']   # 選項
     Session_Value = tk.StringVar()  # 取值
     Session_Value.set('')
     Session_Menu = tk.OptionMenu(User_UI, Session_Value, *Session_List)                # 第二個參數是取值，第三個開始是選項，使用星號展開
-    Session_Menu.place(relx=0.2, rely=0.6)  
+    Session_Menu.place(relx=0.2, rely=0.8)  
 
-    tk.Label(User_UI, text='愈搶的場次順序:',font=('Arial',20,'bold')).place(relx=0, rely=0.7)
+    tk.Label(User_UI, text='愈搶的場次順序:',font=('Arial',20,'bold')).place(relx=0, rely=0.85)
     Session_SelectList = [1,2,3,4,5,6,7,8,9,10]   # 選項
     Session_Select = tk.StringVar()  # 取值
     Session_Select.set('')
     Session_Result = tk.OptionMenu(User_UI, Session_Select, *Session_SelectList)
-    Session_Result.place(relx=0.32, rely=0.7)
-    tk.Label(User_UI, text='*多場次才需要填寫此部分',font=('Arial',12,'bold')).place(relx=0, rely=0.77)
+    Session_Result.place(relx=0.32, rely=0.85)
+    tk.Label(User_UI, text='*多場次才需要填寫此部分',font=('Arial',12,'bold')).place(relx=0, rely=0.9)
     
-    Submit_Button = tk.Button(User_UI, text='送出', font=('Arial',20), width=5, command=lambda: Input_Checking() ).place(relx=0.4, rely=0.85)
+    Submit_Button = tk.Button(User_UI, text='送出', font=('Arial',20), width=5, command=lambda: Input_Checking() ).place(relx=0.4, rely=0.92)
 
     User_UI.mainloop()  # 放在主迴圈中
