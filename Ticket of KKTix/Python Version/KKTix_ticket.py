@@ -154,11 +154,31 @@ def Fulfill_Sheet(driver):
     )
     Agree_Terms.click()
 
+    print('進入表單填寫頁面，請使用者開始輸入身分證字號和點選同意選項....')
+    Fulfill_Sheet_url = driver.current_url
+    print('表單填寫頁面網址:',Fulfill_Sheet_url)
+
+    while True:
+        get_url = driver.current_url
+        print('get_url:',get_url)
+        if get_url == Fulfill_Sheet_url:
+            print('使用者填寫中....')
+            try:
+                alert = driver.switch_to.alert
+            except NoAlertPresentException:
+                continue
+            else:
+                print("Warning: unexpected alert ({})".format(alert.text))
+                alert.accept()
+        else:
+            print('偵測到使用者填寫完成....')
+            return
+
     # 確認表單資料
-    Next_Step = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.XPATH, '//*[@id="registrations_controller"]/div[4]/div[2]/div/div[5]/a'))
-    )
-    Next_Step.click()
+    # Next_Step = WebDriverWait(driver, 10).until(
+    #     EC.element_to_be_clickable((By.XPATH, '//*[@id="registrations_controller"]/div[4]/div[2]/div/div[5]/a'))
+    # )
+    # Next_Step.click()
 
     return
 
