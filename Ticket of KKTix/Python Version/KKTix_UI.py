@@ -158,7 +158,7 @@ def index_withoutexception(self,i):
 
 if __name__ == '__main__':
     User_UI = tk.Tk()   # 建立 tkinter 視窗物件
-    User_UI.title('拓元自動搶票程式') # 設定標題
+    User_UI.title('KKTIX自動搶票程式') # 設定標題
     width = 700
     height = 900
     left = 0
